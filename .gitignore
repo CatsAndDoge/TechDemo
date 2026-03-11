@@ -1,0 +1,14 @@
+# Unreal Generated
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+*.opensdf
+*.sdf
+*.suo
+.vs/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db
