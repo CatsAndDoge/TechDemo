@@ -9,7 +9,6 @@
 
 class UBoxComponent;
 class UStaticMeshComponent;
-//class UTextRenderComponent;
 class UWidgetComponent;
 class UUserWidget;
 class UTextBlock;
@@ -44,18 +43,12 @@ protected:
 	UStaticMeshComponent* MeshComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UBoxComponent* BoxTrigger;
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
-	UTextRenderComponent* TextComponent;*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	UWidgetComponent* WidgetComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UUserWidget> PromptWidgetClass;
 	UPROPERTY()
 	UUserWidget* PromptWidgetInstance = nullptr;
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LogicSwitch")
-	ANPCGroupSpawner* NPCGroupSpawner;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "LogicSwitch")
-	TMap<FName, UAIConfigSet*> SwitchLogicByGroup;*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LogicSwitch")
 	TArray<FLogicSwitchGroup> NPCGroups;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "LogicSwitch")
@@ -84,6 +77,5 @@ private:
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	UFUNCTION()
 	void TryInteract();
-	void UpdateUIText();
 	void UpdatePromptWidget(bool bVisible, bool bSwitchOn);
 };

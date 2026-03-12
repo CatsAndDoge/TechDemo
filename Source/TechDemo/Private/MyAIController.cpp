@@ -144,21 +144,6 @@ void AMyAIController::GetCurrentAIConfig(FName& OutConfigID)
 	UE_LOG(LogTemp, Warning, TEXT("Current AI Config: %s"), *OutConfigID.ToString());
 }
 
-void AMyAIController::MoveToTarget(AActor* Target)
-{
-	if (!Target || !GetPawn())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("MoveToTarget failed: Invalid target or no pawn possessed"));
-		return;
-	}
-	FAIMoveRequest MoveRequest(Target);
-	if (CurrentConfig)
-	{
-		MoveRequest.SetAcceptanceRadius(CurrentConfig->MovementConfig.StoppingDistance);
-	}
-	MoveTo(MoveRequest);
-}
-
 void AMyAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
 	Super::OnMoveCompleted(RequestID, Result);

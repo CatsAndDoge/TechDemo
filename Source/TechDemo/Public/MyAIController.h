@@ -32,8 +32,6 @@ public:
 	void ApplyAIConfig(FName ConfigID);
 	UFUNCTION(BlueprintCallable, Category = "AI Config")
 	void GetCurrentAIConfig(FName& ConfigID);
-	UFUNCTION(BlueprintCallable, Category = "AI Movement")
-	void MoveToTarget(AActor* Target);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI Config")
 	FName CurrentConfigID;

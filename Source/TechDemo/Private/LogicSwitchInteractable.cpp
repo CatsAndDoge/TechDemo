@@ -27,13 +27,6 @@ ALogicSwitchInteractable::ALogicSwitchInteractable()
 	BoxTrigger->SetCollisionResponseToAllChannels(ECR_Ignore);
 	BoxTrigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
-	/*TextComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("PromptText"));
-	TextComponent->SetupAttachment(MeshComponent);
-	TextComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 140.0f));
-	TextComponent->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
-	TextComponent->SetWorldSize(36.0f);
-	TextComponent->SetTextRenderColor(FColor::White);
-	TextComponent->SetHiddenInGame(true);*/
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PromptWidgetComp"));
 	WidgetComponent->SetupAttachment(RootComponent);
 	WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
@@ -166,7 +159,6 @@ void ALogicSwitchInteractable::OnBoxTriggerBeginOverlap(UPrimitiveComponent* Ove
 	{
 		bCanInteract = true;
 		CachedOverlappingPlayerPawn = Cast<APawn>(OtherActor);
-		UpdateUIText();
 		UpdatePromptWidget(true, bSwitchMode);
 	}
 
@@ -178,7 +170,6 @@ void ALogicSwitchInteractable::OnBoxTriggerEndOverlap(UPrimitiveComponent* Overl
 	{
 		bCanInteract = false;
 		CachedOverlappingPlayerPawn = nullptr;
-		UpdateUIText();
 		UpdatePromptWidget(false, bSwitchMode);
 	}
 }
@@ -188,37 +179,8 @@ void ALogicSwitchInteractable::TryInteract()
 	if (bCanInteract && CachedOverlappingPlayerPawn.IsValid())
 	{
 		Interact(CachedOverlappingPlayerPawn.Get());
-		UpdateUIText();
 		UpdatePromptWidget(true, bSwitchMode);
 	}
-}
-
-void ALogicSwitchInteractable::UpdateUIText()
-{
-	/*if (!TextComponent)
-	{
-		return;
-	}
-
-	if (!bCanInteract)
-	{
-		TextComponent->SetHiddenInGame(true);
-		return;
-	}
-
-	const FString ModeText = bSwitchMode ? TEXT("ON") : TEXT("OFF");
-	const FString DisplayText = FString::Printf(TEXT("Press E\nSwitchMode: %s"), *ModeText);
-
-	TextComponent->SetText(FText::FromString(DisplayText));
-	TextComponent->SetHiddenInGame(false);
-	if (bSwitchMode)
-	{
-		TextComponent->SetTextRenderColor(FColor::Red);
-	}
-	else
-	{
-		TextComponent->SetTextRenderColor(FColor::Green);
-	}*/
 }
 
 void ALogicSwitchInteractable::UpdatePromptWidget(bool bVisible, bool bSwitchOn)
@@ -234,12 +196,6 @@ void ALogicSwitchInteractable::UpdatePromptWidget(bool bVisible, bool bSwitchOn)
 	{
 		return;
 	}
-
-	//if (UTextBlock* ActionText = Cast<UTextBlock>(
-	//	PromptWidgetInstance->WidgetTree->FindWidget(TEXT("TxtAction"))))
-	//{
-	//	ActionText->SetText(FText::FromString(TEXT("Press E")));
-	//}
 
 	if (UTextBlock* SwitchText = Cast<UTextBlock>(
 		PromptWidgetInstance->WidgetTree->FindWidget(TEXT("SwitchModText"))))
