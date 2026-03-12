@@ -49,7 +49,7 @@ EBTNodeResult::Type UBTTask_SelectNextPatrolPoint::ExecuteTask(UBehaviorTreeComp
     });
 
 	int32 CurrentIndex = BB->GetValueAsInt(PatrolIndexKey.SelectedKeyName);
-    if (CurrentIndex < 0 || CurrentIndex >= PatrolPoints.Num())
+    if (CurrentIndex <= 0 || CurrentIndex >= PatrolPoints.Num())
     {
         CurrentIndex = PatrolConfig->bRandomStart ? FMath::RandRange(0, PatrolPoints.Num() - 1) : 0;
     }

@@ -9,11 +9,24 @@
 
 class UBoxComponent;
 class UStaticMeshComponent;
-class UTextRenderComponent;
+//class UTextRenderComponent;
+class UWidgetComponent;
+class UUserWidget;
+class UTextBlock;
 class ANPCGroupSpawner;
 class APawn;
 
-UCLASS()
+USTRUCT(BlueprintType)
+struct FLogicSwitchGroup
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LogicSwitch")
+	ANPCGroupSpawner* NPCGroupSpawner;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LogicSwitch")
+	TMap<FName, UAIConfigSet*> SwitchLogicByGroup;
+};
+
+UCLASS(BlueprintType)
 class TECHDEMO_API ALogicSwitchInteractable : public AActor
 {
 	GENERATED_BODY()
@@ -31,12 +44,20 @@ protected:
 	UStaticMeshComponent* MeshComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UBoxComponent* BoxTrigger;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
-	UTextRenderComponent* TextComponent;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LogicSwitch")
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
+	UTextRenderComponent* TextComponent;*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	UWidgetComponent* WidgetComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UUserWidget> PromptWidgetClass;
+	UPROPERTY()
+	UUserWidget* PromptWidgetInstance = nullptr;
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LogicSwitch")
 	ANPCGroupSpawner* NPCGroupSpawner;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "LogicSwitch")
-	TMap<FName, UAIConfigSet*> SwitchLogicByGroup;
+	TMap<FName, UAIConfigSet*> SwitchLogicByGroup;*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LogicSwitch")
+	TArray<FLogicSwitchGroup> NPCGroups;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "LogicSwitch")
 	float InteractCD = 0.5f;
 
@@ -64,4 +85,5 @@ private:
 	UFUNCTION()
 	void TryInteract();
 	void UpdateUIText();
+	void UpdatePromptWidget(bool bVisible, bool bSwitchOn);
 };

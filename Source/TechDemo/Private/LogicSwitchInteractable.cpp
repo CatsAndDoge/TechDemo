@@ -6,6 +6,10 @@
 #include <Kismet/GameplayStatics.h>
 #include "GameplayTagAssetInterface.h"
 #include "NPCGroupSpawner.h"
+#include "Components/WidgetComponent.h"
+#include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetTree.h"
+#include "Components/TextBlock.h"
 #include "Components/TextRenderComponent.h"
 
 // Sets default values
@@ -23,23 +27,29 @@ ALogicSwitchInteractable::ALogicSwitchInteractable()
 	BoxTrigger->SetCollisionResponseToAllChannels(ECR_Ignore);
 	BoxTrigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
-	TextComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("PromptText"));
+	/*TextComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("PromptText"));
 	TextComponent->SetupAttachment(MeshComponent);
 	TextComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 140.0f));
 	TextComponent->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
 	TextComponent->SetWorldSize(36.0f);
 	TextComponent->SetTextRenderColor(FColor::White);
-	TextComponent->SetHiddenInGame(true);
+	TextComponent->SetHiddenInGame(true);*/
+	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PromptWidgetComp"));
+	WidgetComponent->SetupAttachment(RootComponent);
+	WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	WidgetComponent->SetDrawSize(FVector2D(500.f, 200.f));
+	WidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 140.f));
+	WidgetComponent->SetVisibility(false);
 }
 
 bool ALogicSwitchInteractable::Interact(AActor* Interactor)
 {
-	if (!Interactor || !NPCGroupSpawner || !CachedOverlappingPlayerPawn.IsValid())
+	if (!Interactor || NPCGroups.Num() == 0 || !CachedOverlappingPlayerPawn.IsValid())
 	{
 		return false;
 	}
 
-	if (SwitchLogicByGroup.Num() == 0)
+	if (NPCGroups.Num() == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("LogicSwitchInteractable: AlertLogicByGroup is empty"));
 		return false;
@@ -54,10 +64,19 @@ bool ALogicSwitchInteractable::Interact(AActor* Interactor)
 	bool bAllSuccessed = true;
 	if (!bSwitchMode)
 	{
-		for (const TPair < FName, UAIConfigSet*>& Group :SwitchLogicByGroup)
+		for (const FLogicSwitchGroup& Group : NPCGroups)
 		{
-			bool bSuccess = NPCGroupSpawner->SwitchGroupLogic(Group.Key, Group.Value);
-			bAllSuccessed = bAllSuccessed && bSuccess;
+			if (!Group.NPCGroupSpawner)
+			{
+				bAllSuccessed = false;
+				continue;
+			}
+
+			for (const TPair<FName, UAIConfigSet*>& Pair : Group.SwitchLogicByGroup)
+			{
+				bool bSuccess = Group.NPCGroupSpawner->SwitchGroupLogic(Pair.Key, Pair.Value);
+				bAllSuccessed = bAllSuccessed && bSuccess;
+			}
 		}
 
 		if (bAllSuccessed)
@@ -72,10 +91,19 @@ bool ALogicSwitchInteractable::Interact(AActor* Interactor)
 		return false;
 	}
 
-	for (const TPair < FName, UAIConfigSet*>& Group :SwitchLogicByGroup)
+	for (const FLogicSwitchGroup& Group : NPCGroups)
 	{
-		bool bSuccess = NPCGroupSpawner->RevertDefaultGroupLogic(Group.Key);
-		bAllSuccessed = bAllSuccessed && bSuccess;
+		if (!Group.NPCGroupSpawner)
+		{
+			bAllSuccessed = false;
+			continue;
+		}
+
+		for (const TPair<FName, UAIConfigSet*>& Pair : Group.SwitchLogicByGroup)
+		{
+			bool bSuccess = Group.NPCGroupSpawner->RevertDefaultGroupLogic(Pair.Key);
+			bAllSuccessed = bAllSuccessed && bSuccess;
+		}
 	}
 
 	if (bAllSuccessed)
@@ -97,6 +125,15 @@ void ALogicSwitchInteractable::BeginPlay()
 	
 	BoxTrigger->OnComponentBeginOverlap.AddDynamic(this, &ALogicSwitchInteractable::OnBoxTriggerBeginOverlap);
 	BoxTrigger->OnComponentEndOverlap.AddDynamic(this, &ALogicSwitchInteractable::OnBoxTriggerEndOverlap);
+
+	if (WidgetComponent && PromptWidgetClass)
+	{
+		WidgetComponent->SetWidgetClass(PromptWidgetClass);
+		WidgetComponent->InitWidget();
+		PromptWidgetInstance = WidgetComponent->GetUserWidgetObject();
+	}
+
+	UpdatePromptWidget(false, false);
 
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 	{
@@ -130,6 +167,7 @@ void ALogicSwitchInteractable::OnBoxTriggerBeginOverlap(UPrimitiveComponent* Ove
 		bCanInteract = true;
 		CachedOverlappingPlayerPawn = Cast<APawn>(OtherActor);
 		UpdateUIText();
+		UpdatePromptWidget(true, bSwitchMode);
 	}
 
 }
@@ -141,6 +179,7 @@ void ALogicSwitchInteractable::OnBoxTriggerEndOverlap(UPrimitiveComponent* Overl
 		bCanInteract = false;
 		CachedOverlappingPlayerPawn = nullptr;
 		UpdateUIText();
+		UpdatePromptWidget(false, bSwitchMode);
 	}
 }
 
@@ -150,12 +189,13 @@ void ALogicSwitchInteractable::TryInteract()
 	{
 		Interact(CachedOverlappingPlayerPawn.Get());
 		UpdateUIText();
+		UpdatePromptWidget(true, bSwitchMode);
 	}
 }
 
 void ALogicSwitchInteractable::UpdateUIText()
 {
-	if (!TextComponent)
+	/*if (!TextComponent)
 	{
 		return;
 	}
@@ -178,6 +218,33 @@ void ALogicSwitchInteractable::UpdateUIText()
 	else
 	{
 		TextComponent->SetTextRenderColor(FColor::Green);
-	}
+	}*/
 }
 
+void ALogicSwitchInteractable::UpdatePromptWidget(bool bVisible, bool bSwitchOn)
+{
+	if (!WidgetComponent)
+	{
+		return;
+	}
+
+	WidgetComponent->SetVisibility(bVisible);
+
+	if (!PromptWidgetInstance || !PromptWidgetInstance->WidgetTree)
+	{
+		return;
+	}
+
+	//if (UTextBlock* ActionText = Cast<UTextBlock>(
+	//	PromptWidgetInstance->WidgetTree->FindWidget(TEXT("TxtAction"))))
+	//{
+	//	ActionText->SetText(FText::FromString(TEXT("Press E")));
+	//}
+
+	if (UTextBlock* SwitchText = Cast<UTextBlock>(
+		PromptWidgetInstance->WidgetTree->FindWidget(TEXT("SwitchModText"))))
+	{
+		SwitchText->SetText(FText::FromString(
+			bSwitchOn ? TEXT("SwitchMode: ON") : TEXT("SwitchMode: OFF")));
+	}
+}
